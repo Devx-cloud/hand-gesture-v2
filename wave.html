@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Grid Background</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            /* Background gradasi biru gelap yang menenangkan */
+            background: radial-gradient(circle at center, #0f1c2e 0%, #050a10 100%);
+            font-family: 'Segoe UI', sans-serif; 
+        }
+        canvas { display: block; }
+
+        /* Overlay tekstur scanline halus */
+        .scan-overlay {
+            position: absolute;
+            top: 0; 
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(135, 206, 250, 0.02) 3px,
+                rgba(135, 206, 250, 0.02) 4px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scan-overlay"></div>
+    <canvas id="flowCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('flowCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let nodesBottom = []; 
+        let nodesTop = [];
+        
+        // Konfigurasi Grid
+        let COLS = 30; 
+        const ROWS = 40; 
+        const SPACING = 60; 
+        
+        // Parameter Gelombang Ocean
+        const WAVE_SPEED = 0.002; 
+        const WAVE_HEIGHT = 35; 
+        
+        // Kamera/Perspektif
+        const FOCAL_LENGTH = 700; 
+        const CAMERA_Y = 0; 
+        const CAMERA_Z = -100; 
+        const GRID_OFFSET_Y = 200; 
+
+        let time = 0;
+
+        // Fungsi Gelombang Ocean
+        function calculateWaveY(x, z, t) {
+            return Math.sin(z * 0.012 - t * 1.5) * Math.cos(x * 0.008) * WAVE_HEIGHT;
+        }
+
+        class Node {
+            constructor(row, col, isTop) {
+                this.row = row;
+                this.col = col;
+                this.isTop = isTop;
+                this.updateBasePosition();
+                
+                this.x = this.xBase;
+                this.y = this.yBase;
+                this.z = this.zBase;
+
+                this.sx = 0;
+                this.sy = 0;
+                this.scale = 1;
+                this.visible = false;
+            }
+
+            updateBasePosition() {
+                this.xBase = (this.col - COLS/2) * SPACING;
+                this.zBase = (this.row) * SPACING; 
+                this.yBase = this.isTop ? -GRID_OFFSET_Y : GRID_OFFSET_Y;
+            }
+
+            update() {
+                let waveY = calculateWaveY(this.xBase, this.zBase, time);
+                
+                if (this.isTop) {
+                    this.y = this.yBase - waveY; 
+                } else {
+                    this.y = this.yBase + waveY;
+                }
+
+                let perspectiveZ = this.z - CAMERA_Z;
+                
+                if (perspectiveZ > 0) {
+                    this.scale = FOCAL_LENGTH / perspectiveZ;
+                    this.sx = this.x * this.scale + width / 2;
+                    this.sy = (this.y - CAMERA_Y) * this.scale + height / 2; 
+                    
+                    this.visible = (this.sx > -50 && this.sx < width + 50 && this.sy > -50 && this.sy < height + 50);
+                } else {
+                    this.visible = false;
+                }
+            }
+        }
+
+        function getNode(nodeArray, r, c) {
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+            return nodeArray[r * COLS + c];
+        }
+
+        function init() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            COLS = Math.ceil(width / SPACING) + 4; 
+            if (COLS % 2 === 0) COLS++;
+
+            nodesBottom = [];
+            nodesTop = [];
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    nodesBottom.push(new Node(r, c, false)); 
+                    nodesTop.push(new Node(r, c, true));   
+                }
+            }
+        }
+
+        function drawGrid(nodeArray) {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    let n = getNode(nodeArray, r, c);
+                    if (!n || !n.visible) continue;
+
+                    // --- Logika "Bergilir" (Scanning Wave) ---
+                    // Kita buat gelombang sinus yang bergerak diagonal melintasi grid
+                    // r * 0.2 + c * 0.2 membuat gelombang diagonal
+                    // time * 2 membuat gelombang bergerak
+                    let wavePhase = (r * 0.15) + (c * 0.1) - (time * 1.5);
+                    let intensity = Math.sin(wavePhase);
+                    
+                    // Kita hanya ambil puncak gelombang positif agar ada jeda gelap
+                    intensity = Math.max(0, intensity); 
+                    
+                    // Mempertajam puncak gelombang agar area terang lebih fokus
+                    intensity = Math.pow(intensity, 8); 
+
+                    // Hitung warna & opacity berdasarkan intensitas gelombang
+                    let depthScale = Math.min(1, n.scale * 1.5);
+                    
+                    // Warna Dasar (Redup): Biru Langit (135, 206, 250)
+                    // Warna Highlight (Terang): Putih Kebiruan (220, 245, 255)
+                    
+                    let rCol = 135 + (85 * intensity); 
+                    let gCol = 206 + (49 * intensity); 
+                    let bCol = 250 + (5 * intensity);
+                    
+                    // Alpha: Dasar rendah (0.15) + Highlight (sampai 0.6)
+                    let alpha = (depthScale * 0.15) + (intensity * 0.6 * depthScale);
+                    
+                    let colorString = `rgba(${Math.floor(rCol)}, ${Math.floor(gCol)}, ${Math.floor(bCol)}, ${alpha})`;
+                    
+                    // Ketebalan garis ikut membesar sedikit saat menyala
+                    let lineWidth = 1 + (intensity * 1.5);
+
+                    ctx.lineWidth = lineWidth;
+                    ctx.strokeStyle = colorString;
+
+                    // Gambar Garis Horizontal (Kanan)
+                    if (c < COLS - 1) {
+                        let right = getNode(nodeArray, r, c + 1);
+                        if (right && right.visible) {
+                            ctx.beginPath();
+                            ctx.moveTo(n.sx, n.sy);
+                            ctx.lineTo(right.sx, right.sy);
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Gambar Garis Vertikal (Maju/Bawah)
+                    if (r < ROWS - 1) {
+                        let down = getNode(nodeArray, r + 1, c);
+                        if (down && down.visible) {
+                            ctx.beginPath();
+                            ctx.moveTo(n.sx, n.sy);
+                            ctx.lineTo(down.sx, down.sy);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height); 
+            time += WAVE_SPEED; 
+
+            // 1. Update Posisi
+            nodesBottom.forEach(node => node.update());
+            nodesTop.forEach(node => node.update());
+
+            // 2. Gambar Grid Layer Bawah (Tanpa drawLights terpisah)
+            drawGrid(nodesBottom);
+
+            // 3. Gambar Grid Layer Atas
+            drawGrid(nodesTop);
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', init);
+        
+        init();
+        animate();
+
+    </script>
+</body>
+</html>
