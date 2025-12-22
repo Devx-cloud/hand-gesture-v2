@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gesture Launcher - Dual Camera System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&family=Orbitron:wght@700&display=swap"
+        rel="stylesheet">
+
     <!-- Tailwind (Optional Utility) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
@@ -19,43 +21,45 @@
     <canvas id="flowCanvas"></canvas>
 
     <!-- Camera 1 Container -->
-     <div class="main-layout">
-    <div class="scan-container" id="container1">
-        <video class="input_video" id="input_video1" autoplay playsinline muted></video>
-        <!-- Pastikan file gambar ada -->
-        <img src="futuristic-arm-removebg-preview.png" class="futuristic-arm-overlay" alt="Arm Overlay" onerror="this.style.display='none'">
+    <div class="main-layout">
+        <div class="scan-container" id="container1">
+            <video class="input_video" id="input_video1" autoplay playsinline muted></video>
+            <!-- Pastikan file gambar ada -->
+            <img src="futuristic-arm-removebg-preview.png" class="futuristic-arm-overlay" alt="Arm Overlay"
+                onerror="this.style.display='none'">
 
-        <svg class="progress-circle" viewBox="0 0 100 100">
-            <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
-            <circle class="progress-bar" id="progress-bar1" cx="50" cy="50" r="45"></circle>
-        </svg>
+            <svg class="progress-circle" viewBox="0 0 100 100">
+                <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="progress-bar" id="progress-bar1" cx="50" cy="50" r="45"></circle>
+            </svg>
 
-        <div class="ui-text-wrapper">
-            <p id="instructions1" class="ui-text instructions visible">Letakkan tangan<br>di depan kamera 1</p>
-            <p id="status-message1" class="ui-text status-message"></p>
-            <p id="countdown-display1" class="ui-text countdown-display"></p>
-            <p id="launch-message1" class="ui-text launch-message"></p>
+            <div class="ui-text-wrapper">
+                <p id="instructions1" class="ui-text instructions visible">Letakkan tangan<br>di depan kamera 1</p>
+                <p id="status-message1" class="ui-text status-message"></p>
+                <p id="countdown-display1" class="ui-text countdown-display"></p>
+                <p id="launch-message1" class="ui-text launch-message"></p>
+            </div>
         </div>
-    </div>
 
-    <!-- Camera 2 Container -->
-    <div class="scan-container" id="container2">
-        <video class="input_video" id="input_video2" autoplay playsinline muted></video>
-        <!-- Pastikan file gambar ada -->
-        <img src="futuristic-arm-removebg-preview.png" class="futuristic-arm-overlay" alt="Arm Overlay" onerror="this.style.display='none'">
+        <!-- Camera 2 Container -->
+        <div class="scan-container" id="container2">
+            <video class="input_video" id="input_video2" autoplay playsinline muted></video>
+            <!-- Pastikan file gambar ada -->
+            <img src="futuristic-arm-removebg-preview.png" class="futuristic-arm-overlay" alt="Arm Overlay"
+                onerror="this.style.display='none'">
 
-        <svg class="progress-circle" viewBox="0 0 100 100">
-            <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
-            <circle class="progress-bar" id="progress-bar2" cx="50" cy="50" r="45"></circle>
-        </svg>
+            <svg class="progress-circle" viewBox="0 0 100 100">
+                <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="progress-bar" id="progress-bar2" cx="50" cy="50" r="45"></circle>
+            </svg>
 
-        <div class="ui-text-wrapper">
-            <p id="instructions2" class="ui-text instructions visible">Letakkan tangan<br>di depan kamera 2</p>
-            <p id="status-message2" class="ui-text status-message"></p>
-            <p id="countdown-display2" class="ui-text countdown-display"></p>
-            <p id="launch-message2" class="ui-text launch-message"></p>
+            <div class="ui-text-wrapper">
+                <p id="instructions2" class="ui-text instructions visible">Letakkan tangan<br>di depan kamera 2</p>
+                <p id="status-message2" class="ui-text status-message"></p>
+                <p id="countdown-display2" class="ui-text countdown-display"></p>
+                <p id="launch-message2" class="ui-text launch-message"></p>
+            </div>
         </div>
-    </div>
     </div>
 
     <!-- Audio Assets -->
@@ -66,7 +70,7 @@
     <div id="start-overlay">
         <h1>Dual Gesture Access</h1>
         <p>Pilih sumber kamera untuk masing-masing sisi</p>
-        
+
         <div class="select-container">
             <div class="cam-select-wrapper">
                 <span class="cam-label blue">Kamera Kiri (Biru)</span>
@@ -83,11 +87,15 @@
     </div>
 
     <!-- Dependencies & External Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.min.js"></script> -->
+    <script src="mediapipe/hands.min.js"></script>
+    <script src="mediapipe/camera_utils.min.js"></script>
+
     <!-- Pastikan script_camera.js ada di folder yang sama -->
     <script src="script_camera.js"></script>
     <!-- Jika ada logika lain, bisa ditambahkan di sini -->
     <script src="script_container_v2.js"></script>
 </body>
+
 </html>
