@@ -268,7 +268,7 @@ function finishLaunch(config) {
     // 4. Redirect (Jeda sebentar agar user sempat membaca Access Granted)
     setTimeout(() => { 
         window.location.href = "video.mp4"; 
-    }, 1000); 
+    }, 300); 
 }
 
 // --- 5. INITIALIZE APP ---
